@@ -1,6 +1,8 @@
 package IRAlgorithm;
 
 import com.huaban.analysis.jieba.JiebaSegmenter;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -81,14 +83,18 @@ public class BM25 {
         // 句子中一个 term 的出現頻率
         double count = 0;
         //平均每个文档的 term 數量
-        double avgDocSize = (corpusTerms.size() / documentList.size());
+        int ld = StringUtils.join(tfDocument, "").length();
+        int corpusSize = StringUtils.join(corpusTerms, "").length();
+        double avgDocSize = (corpusSize / documentList.size());
+
         for (String word : tfDocument) {
             if (term.equalsIgnoreCase(word)) {
                 count++;
             }
         }
         double freq = count / tfDocument.size();
-        return (freq * (k1 + 1)) / (freq + k1 * (1 - b + b * (tfDocument.size()) / avgDocSize));
+
+        return (freq * (k1 + 1)) / (freq + k1 * (1 - b + b * ld / avgDocSize));
     }
 
     /**
@@ -107,7 +113,7 @@ public class BM25 {
                 }
             }
         }
-        return Math.log((documentList.size() + 0.5) / (count + 0.5));
+        return Math.log(1 + (documentList.size() - count + 0.5) / (count + 0.5));
     }
 
     /**
@@ -138,11 +144,11 @@ public class BM25 {
      */
     public Map<String, Double> rankBM25(String query, Map<String, String> documents, int topNum) {
         clear();
-        List<String> segmentList = seg(query);
+        List<String> segmentList = segByCharacter(query);
         for (Map.Entry docEntry : documents.entrySet()) {
             String id = (String) docEntry.getKey();
             String doc = (String) docEntry.getValue();
-            List<String> segs = seg(doc);
+            List<String> segs = segByCharacter(doc);
             documentList.add(segs);
             corpusTerms.addAll(segs);
             corpusHashMap.put(segs, id);
@@ -177,13 +183,28 @@ public class BM25 {
 
     /**
      * 句子分词
+     * 待优化：通过词性过滤无意义的词
      * @param sentence
      * @return
      */
     private List<String> seg(String sentence){
         List<String> segs = segmenter.sentenceProcess(sentence);
-        List<String> words = segs.stream().filter(t -> t.trim().length()>1).map(w -> w.toLowerCase()).collect(Collectors.toList());
+        List<String> words = segs.stream().map(w -> w.trim().toLowerCase()).collect(Collectors.toList());
         return words;
+    }
+
+    /**
+     * 对于中文分词，把字当作一个词单元效果更好
+     * @param sentence
+     * @return
+     */
+    private List<String> segByCharacter(String sentence){
+        List<String> stringList = new ArrayList<>();
+        for (char c : sentence.toCharArray()) {
+            String s = String.valueOf(c).trim().toLowerCase();
+            stringList.add(s);
+        }
+        return stringList;
     }
 
     /**
@@ -196,3 +217,4 @@ public class BM25 {
     }
 
 }
+

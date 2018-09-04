@@ -9,4 +9,12 @@ bm25 是一种用来评价搜索词和文档之间相关性的算法，是一种
 
 ![Image text](https://github.com/JunfengDuan/irbm25/blob/master/image/bm25formula.jpg)
 
+## 针对中文改进
+
+基于字符的分词效果更好
+
+调节词频的k1设置的小一点效果好
+
+公式微小调整
+
 
